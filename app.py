@@ -1,62 +1,50 @@
-import streamlit as st
 import instaloader
-from instaloader.exceptions import ConnectionException, TwoFactorAuthRequiredException
+import streamlit as st
 
-def get_followers_and_following(username, password):
-    L = instaloader.Instaloader()
+# Initialize instaloader
+L = instaloader.Instaloader()
 
+st.title('Instagram Unfollowers List')
+st.subheader('This web is created by Kurniawan Satria, and is 100% safe.')
+
+# Get the target username from the user
+username = st.text_input('Instagram Username to Check:')
+
+# Display button to start the process
+if st.button('Check Unfollowers'):
     try:
-        L.login(username, password)  # Login with your Instagram credentials
+        # Login using the preset account
+        L.login("kurniawan_satria__", "jayayusman1")
+        st.success("Login successful! Checking unfollowers for the given username.")
 
-        # Load profile
+        # Get the profile information of the target username
         profile = instaloader.Profile.from_username(L.context, username)
 
-        # Initialize lists for followers and following
-        followers = []
-        following = []
+        # Get the list of users the target profile follows
+        following = set(profile.get_followees())
 
-        # Get followers
-        for follower in profile.get_followers():
-            followers.append(follower.username)
+        # Get the list of users who follow the target profile
+        followers = set(profile.get_followers())
 
-        # Get following
-        for followee in profile.get_followees():
-            following.append(followee.username)
+        # Get the list of users who don't follow the target profile back
+        non_followers = following - followers
 
-        # Calculate people whom you follow but who don't follow you back
-        not_followers_back = list(set(following) - set(followers))
-
-        return not_followers_back
-    except TwoFactorAuthRequiredException:
-        raise ValueError("Login error: Disable two-factor authentication")
-    except ConnectionException as e:
-        raise ValueError("Login error: " + str(e))
-
-def main():
-    st.title("Instagram UnFollower Checker")
-    st.write("1. Two-factor authentication should be disabled for this to work.")
-    st.write("2. Do not use this service for the same account more than once in a day. Too many requests can result in temporary ban of your account.")
-    st.write("3. Your username and password won't be stored in any database.")
-    st.write("4. If the web-app does not work, run the code locally on your PC.")
-    st.markdown("[GitHub](https://github.com/SiddhantDembi/Insta-Unfollowers)")
-    st.write("Enter your Instagram credentials below:")
-
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-
-    if st.button("Check"):
-        if not username or not password:
-            st.error("Please enter your username and password.")
+        if len(non_followers) == 0:
+            st.success("No users who don't follow you back.")
         else:
-            try:
-                not_followers_back = get_followers_and_following(username, password)
-                st.write("People whom you follow but who don't follow you back:")
-                st.write("Click on the username to visit their profile.")
-                for user in not_followers_back:
-                    # Display the username as a clickable hyperlink
-                    st.markdown(f"[{user}](https://www.instagram.com/{user})")
-            except ValueError as e:
-                st.error(str(e))
+            # Display the list of users who don't follow you back
+            st.warning("Users who don't follow you back:")
+            for user in non_followers:
+                st.markdown(f"<span style='color:blue'>{user.username}</span>", unsafe_allow_html=True)
 
-if __name__ == "__main__":
-    main()
+        # Logout from Instagram account
+        L.close()
+
+    except instaloader.exceptions.ConnectionException:
+        st.error("Connection error occurred. Please check your internet connection and try again.")
+    except instaloader.exceptions.BadCredentialsException:
+        st.error("Login failed for the preset account. Please check the login details.")
+    except instaloader.exceptions.TwoFactorAuthRequiredException:
+        st.error("Two-factor authentication is required for the preset account.")
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
