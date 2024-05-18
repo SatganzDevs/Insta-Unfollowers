@@ -14,7 +14,7 @@ username = st.text_input('Instagram Username to Check:')
 if st.button('Check Unfollowers'):
     try:
         # Login using the preset account
-        L.login("kurniawan_satria__", "jayayusman1")
+        L.login("siestanatsugani", "jayayusman1")
         st.success("Login successful! Checking unfollowers for the given username.")
 
         # Get the profile information of the target username
